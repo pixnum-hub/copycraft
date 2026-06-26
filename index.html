@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CopyCraft — AI Copywriter</title>
+<meta name="description" content="AI-powered copywriting studio for ads, emails, social media, and more.">
+<meta name="theme-color" content="#f5c842">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CopyCraft">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600&display=swap');
+:root{--bg:#0f0f13;--surface:#18181f;--border:#2a2a35;--accent:#f5c842;--accent2:#e8883a;--text:#f0eff5;--muted:#888;--radius:12px;--font:'DM Sans',sans-serif;--display:'Playfair Display',serif}
+[data-theme=light]{--bg:#f5f4ef;--surface:#fff;--border:#ddd;--text:#1a1a1a;--muted:#666}
+[data-theme=oled]{--bg:#000;--surface:#0a0a0a;--border:#1a1a1a;--text:#fff;--muted:#555}
+[data-theme=hc]{--bg:#000;--surface:#111;--border:#fff;--accent:#ff0;--text:#fff;--muted:#ccc}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;display:flex;flex-direction:column;transition:background .3s,color .3s}
+header{padding:18px 16px 12px;text-align:center;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;background:var(--bg)}
+header h1{font-family:var(--display);font-size:clamp(1.4rem,5vw,2rem);background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-.5px}
+header p{font-size:.75rem;color:var(--muted);margin-top:2px}
+.themes{display:flex;gap:6px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+.themes button{padding:4px 11px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:.72rem;cursor:pointer;font-family:var(--font);transition:all .2s}
+.themes button.active,.themes button:hover{border-color:var(--accent);color:var(--accent)}
+main{flex:1;padding:16px;max-width:640px;width:100%;margin:0 auto}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+.card label{display:block;font-size:.8rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+select,textarea,input[type=text]{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:.9rem;padding:10px 12px;outline:none;transition:border-color .2s;-webkit-appearance:none}
+select:focus,textarea:focus,input[type=text]:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:70px;line-height:1.5}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.dd-wrap{position:relative}
+.dd-trigger{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:.88rem;padding:10px 12px;text-align:left;cursor:pointer;transition:border-color .2s;display:flex;justify-content:space-between;align-items:center}
+.dd-trigger:focus,.dd-trigger.open{border-color:var(--accent)}
+.dd-trigger span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.dd-arrow{font-size:.65rem;flex-shrink:0;margin-left:6px;transition:transform .25s}
+.dd-trigger.open .dd-arrow{transform:rotate(180deg)}
+.dd-list{display:none;position:absolute;top:calc(100%+4px);left:0;right:0;background:var(--surface);border:1px solid var(--accent);border-radius:8px;z-index:200;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.dd-list.open{display:block}
+.dd-list button{width:100%;background:none;border:none;color:var(--text);font-family:var(--font);font-size:.84rem;padding:8px 14px;text-align:left;cursor:pointer;transition:background .15s}
+.dd-list button:hover,.dd-list button.selected{background:var(--border);color:var(--accent)}
+.dd-list button.selected{font-weight:600}
+.dd-list::-webkit-scrollbar{width:4px}
+.dd-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.chip-grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chip{padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:.75rem;cursor:pointer;font-family:var(--font);transition:all .2s;white-space:nowrap}
+.chip.active{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+.tog-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0}
+.tog-row+.tog-row{border-top:1px solid var(--border)}
+.tog-label{font-size:.85rem}
+.tog-desc{font-size:.72rem;color:var(--muted);margin-top:1px}
+.toggle-sw{position:relative;width:36px;height:20px;flex-shrink:0}
+.toggle-sw input{opacity:0;width:0;height:0}
+.toggle-sw .sl{position:absolute;cursor:pointer;inset:0;background:var(--border);border-radius:20px;transition:.3s}
+.toggle-sw .sl:before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.3s}
+.toggle-sw input:checked+.sl{background:var(--accent)}
+.toggle-sw input:checked+.sl:before{transform:translateX(16px)}
+.slider-row{display:flex;align-items:center;gap:10px;margin-top:8px}
+.slider-row span{font-size:.75rem;color:var(--muted);white-space:nowrap}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;border-radius:4px;background:var(--border);outline:none;border:none;padding:0;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);cursor:pointer}
+.slider-val{font-size:.78rem;color:var(--accent);font-weight:600;min-width:72px;text-align:center}
+.brief-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px;display:none;font-size:.79rem;line-height:1.75}
+.brief-card.show{display:block}
+.brief-card strong{color:var(--accent)}
+.gen-btn{width:100%;padding:14px;border-radius:var(--radius);border:none;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#111;font-family:var(--display);font-size:1.05rem;font-weight:700;cursor:pointer;letter-spacing:.02em;transition:opacity .2s,transform .1s;margin-top:4px}
+.gen-btn:hover{opacity:.9}
+.gen-btn:active{transform:scale(.98)}
+.gen-btn:disabled{opacity:.5;cursor:not-allowed}
+.reset-btn{width:100%;padding:10px;border-radius:var(--radius);border:1px solid var(--border);background:transparent;color:var(--muted);font-family:var(--font);font-size:.85rem;cursor:pointer;transition:all .2s;margin-top:8px}
+.reset-btn:hover{border-color:#e05c5c;color:#e05c5c}
+.output-card{display:none}
+.output-card.show{display:block}
+.output-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px}
+.out-actions{display:flex;gap:5px;flex-wrap:wrap}
+.icon-btn{padding:5px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:.73rem;cursor:pointer;font-family:var(--font);transition:all .2s}
+.icon-btn:hover{border-color:var(--accent);color:var(--accent)}
+.copy-btn{padding:6px 14px;border-radius:20px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:.78rem;cursor:pointer;font-family:var(--font);transition:all .2s}
+.copy-btn:hover{background:var(--accent);color:#111}
+#outputText{white-space:pre-wrap;line-height:1.7;font-size:.92rem;color:var(--text)}
+.stats-bar{display:none;flex-wrap:wrap;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.stats-bar.show{display:flex}
+.stat-item{font-size:.72rem;color:var(--muted)}
+.stat-item strong{color:var(--text)}
+.score-card{display:none;margin-top:12px;background:var(--bg);border-radius:8px;padding:12px;border:1px solid var(--border)}
+.score-card.show{display:block}
+.score-card h4{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.score-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.score-label{font-size:.8rem;width:80px;flex-shrink:0}
+.score-bar-wrap{flex:1;height:6px;background:var(--border);border-radius:4px;overflow:hidden}
+.score-bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width .6s}
+.score-num{font-size:.8rem;font-weight:600;color:var(--accent);width:24px;text-align:right}
+.skeleton{display:none;flex-direction:column;gap:10px}
+.skeleton.show{display:flex}
+.skel-line{height:14px;border-radius:6px;background:linear-gradient(90deg,var(--border) 25%,var(--surface) 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite}
+.skel-line.short{width:60%}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.hist-item{padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;transition:border-color .2s;font-size:.82rem}
+.hist-item:hover{border-color:var(--accent)}
+.hist-meta{font-size:.7rem;color:var(--muted);margin-bottom:4px}
+.hist-preview{line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;cursor:pointer}
+.hist-del{float:right;background:none;border:none;color:var(--muted);font-size:.85rem;cursor:pointer;padding:0 2px;transition:color .2s}
+.hist-del:hover{color:#e05c5c}
+.hist-empty{font-size:.82rem;color:var(--muted);text-align:center;padding:20px 0}
+.char-count{font-size:.72rem;color:var(--muted);text-align:right;margin-top:4px}
+footer{text-align:center;padding:16px;font-size:.72rem;color:var(--muted);border-top:1px solid var(--border)}
+.section-toggle{display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none}
+.section-toggle .caret{font-size:.65rem;color:var(--muted);transition:transform .25s}
+.section-toggle.collapsed .caret{transform:rotate(-90deg)}
+.collapsible-body{overflow:hidden;transition:max-height .35s ease;max-height:0}
+.collapsible-body.open{max-height:1200px}
+</style>
+</head>
+<body>
+<header>
+  <h1>✍ CopyCraft</h1>
+  <p>AI-Powered Copywriting Studio</p>
+  <div class="themes">
+    <button onclick="setTheme('dark')" id="t-dark" class="active">🌙 Dark</button>
+    <button onclick="setTheme('light')" id="t-light">☀️ Light</button>
+    <button onclick="setTheme('oled')" id="t-oled">⚫ OLED</button>
+    <button onclick="setTheme('hc')" id="t-hc">🔆 HC</button>
+  </div>
+</header>
+<main>
+
+<!-- Copy Type -->
+<div class="card">
+  <label>Copy Type</label>
+  <div class="dd-wrap" id="ct-wrap">
+    <button class="dd-trigger" id="ct-trigger" onclick="toggleDD('ct')"><span id="ct-label">Advertisement / Ad Copy</span><span class="dd-arrow">▼</span></button>
+    <div class="dd-list" id="ct-list"></div>
+  </div>
+</div>
+
+<!-- Product -->
+<div class="card">
+  <label>What are you promoting?</label>
+  <textarea id="product" placeholder="e.g. A productivity app for remote teams that tracks tasks and automates reports…" rows="3"></textarea>
+  <div class="char-count"><span id="charCount">0</span> / 300</div>
+</div>
+
+<!-- Audience + Platform -->
+<div class="card">
+  <div class="row2">
+    <div>
+      <label>Target Audience</label>
+      <div class="dd-wrap" id="aud-wrap">
+        <button class="dd-trigger" id="aud-trigger" onclick="toggleDD('aud')"><span id="aud-label">Startup Founders</span><span class="dd-arrow">▼</span></button>
+        <div class="dd-list" id="aud-list"></div>
+      </div>
+    </div>
+    <div>
+      <label>Platform / Medium</label>
+      <div class="dd-wrap" id="plat-wrap">
+        <button class="dd-trigger" id="plat-trigger" onclick="toggleDD('plat')"><span id="plat-label">Instagram</span><span class="dd-arrow">▼</span></button>
+        <div class="dd-list" id="plat-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tone of Voice (16 tones) -->
+<div class="card">
+  <label>Tone of Voice</label>
+  <div class="chip-grid" id="toneGrid">
+    <button class="chip active" data-tone="Professional">Professional</button>
+    <button class="chip" data-tone="Friendly">Friendly</button>
+    <button class="chip" data-tone="Bold">Bold</button>
+    <button class="chip" data-tone="Witty">Witty</button>
+    <button class="chip" data-tone="Luxury">Luxury</button>
+    <button class="chip" data-tone="Urgency">Urgency</button>
+    <button class="chip" data-tone="Empathetic">Empathetic</button>
+    <button class="chip" data-tone="Inspirational">Inspirational</button>
+    <button class="chip" data-tone="Playful">Playful</button>
+    <button class="chip" data-tone="Minimalist">Minimalist</button>
+    <button class="chip" data-tone="Storytelling">Storytelling</button>
+    <button class="chip" data-tone="Authoritative">Authoritative</button>
+    <button class="chip" data-tone="Nostalgic">Nostalgic</button>
+    <button class="chip" data-tone="Sarcastic">Sarcastic</button>
+    <button class="chip" data-tone="Educational">Educational</button>
+    <button class="chip" data-tone="Rebellious">Rebellious</button>
+  </div>
+</div>
+
+<!-- Formality + Language -->
+<div class="card">
+  <div class="row2">
+    <div>
+      <label>Formality Level</label>
+      <div class="slider-row">
+        <span>Casual</span>
+        <input type="range" id="formalSlider" min="1" max="5" value="3" oninput="updateBrief()">
+        <span>Formal</span>
+      </div>
+      <div style="text-align:center;margin-top:6px"><span class="slider-val" id="formalLabel">Neutral</span></div>
+    </div>
+    <div>
+      <label>Output Language</label>
+      <div class="dd-wrap" id="lang-wrap">
+        <button class="dd-trigger" id="lang-trigger" onclick="toggleDD('lang')"><span id="lang-label">English</span><span class="dd-arrow">▼</span></button>
+        <div class="dd-list" id="lang-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Content Structure Settings -->
+<div class="card">
+  <div class="section-toggle" onclick="toggleSection('struct')">
+    <label style="margin:0;cursor:pointer">📐 Content Structure</label>
+    <span class="caret" id="struct-caret">▼</span>
+  </div>
+  <div class="collapsible-body" id="struct-body">
+    <div style="margin-top:12px;display:flex;flex-direction:column;gap:12px">
+      <div>
+        <label>Copy Length</label>
+        <div class="chip-grid" id="lengthGrid">
+          <button class="chip" data-val="Micro (under 50 words)">Micro</button>
+          <button class="chip active" data-val="Short (50–100 words)">Short</button>
+          <button class="chip" data-val="Medium (100–200 words)">Medium</button>
+          <button class="chip" data-val="Long (200+ words)">Long</button>
+        </div>
+      </div>
+      <div>
+        <label>Reading Level</label>
+        <div class="chip-grid" id="readLevelGrid">
+          <button class="chip" data-val="Elementary">Elementary</button>
+          <button class="chip active" data-val="Middle School">Middle School</button>
+          <button class="chip" data-val="College">College</button>
+          <button class="chip" data-val="Expert">Expert</button>
+        </div>
+      </div>
+      <div>
+        <label>Point of View</label>
+        <div class="chip-grid" id="povGrid">
+          <button class="chip" data-val="First Person (I / We)">1st Person</button>
+          <button class="chip active" data-val="Second Person (You)">2nd Person</button>
+          <button class="chip" data-val="Third Person (They)">3rd Person</button>
+        </div>
+      </div>
+      <div>
+        <label>Sentence Style</label>
+        <div class="chip-grid" id="sentGrid">
+          <button class="chip" data-val="Punchy (short sentences)">Punchy</button>
+          <button class="chip active" data-val="Mixed">Mixed</button>
+          <button class="chip" data-val="Flowing (longer sentences)">Flowing</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Persuasion & Psychology -->
+<div class="card">
+  <div class="section-toggle" onclick="toggleSection('psych')">
+    <label style="margin:0;cursor:pointer">🧠 Persuasion & Psychology</label>
+    <span class="caret" id="psych-caret">▼</span>
+  </div>
+  <div class="collapsible-body" id="psych-body">
+    <div style="margin-top:12px;display:flex;flex-direction:column;gap:12px">
+      <div>
+        <label>Emotional Hook</label>
+        <div class="chip-grid" id="hookGrid">
+          <button class="chip active" data-val="Fear of Missing Out">FOMO</button>
+          <button class="chip" data-val="Social Proof">Social Proof</button>
+          <button class="chip" data-val="Curiosity Gap">Curiosity</button>
+          <button class="chip" data-val="Transformation">Transform</button>
+          <button class="chip" data-val="Belonging">Belonging</button>
+        </div>
+      </div>
+      <div>
+        <label>Offer Framing</label>
+        <div class="chip-grid" id="framingGrid">
+          <button class="chip active" data-val="Problem → Solution">Problem→Solution</button>
+          <button class="chip" data-val="Before → After">Before→After</button>
+          <button class="chip" data-val="Feature → Benefit">Feature→Benefit</button>
+          <button class="chip" data-val="Question → Answer">Question→Answer</button>
+        </div>
+      </div>
+      <div>
+        <label>Urgency Type</label>
+        <div class="chip-grid" id="urgGrid">
+          <button class="chip" data-val="None">None</button>
+          <button class="chip active" data-val="Time-based urgency">Time-based</button>
+          <button class="chip" data-val="Scarcity-based urgency">Scarcity</button>
+          <button class="chip" data-val="Social proof urgency">Social</button>
+        </div>
+      </div>
+      <div class="tog-row">
+        <div><div class="tog-label">Trust Signal Injection</div><div class="tog-desc">Auto-add credibility markers</div></div>
+        <label class="toggle-sw"><input type="checkbox" id="togTrust"><span class="sl"></span></label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Brand & Voice Settings -->
+<div class="card">
+  <div class="section-toggle" onclick="toggleSection('brand')">
+    <label style="margin:0;cursor:pointer">🎙 Brand & Voice</label>
+    <span class="caret" id="brand-caret">▼</span>
+  </div>
+  <div class="collapsible-body" id="brand-body">
+    <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
+      <div>
+        <label>Brand Keywords (must include)</label>
+        <input type="text" id="brandKw" placeholder="e.g. effortless, trusted, bold">
+      </div>
+      <div>
+        <label>Forbidden Words (must avoid)</label>
+        <input type="text" id="forbidKw" placeholder="e.g. cheap, luxury, perfect">
+      </div>
+      <div>
+        <label>Emoji Style</label>
+        <div class="chip-grid" id="emojiGrid">
+          <button class="chip active" data-val="no emojis">None</button>
+          <button class="chip" data-val="minimal emojis (1–2 only)">Minimal</button>
+          <button class="chip" data-val="expressive emojis throughout">Expressive</button>
+        </div>
+      </div>
+      <div>
+        <label>Hashtag Generator</label>
+        <div class="chip-grid" id="hashGrid">
+          <button class="chip active" data-val="none">Off</button>
+          <button class="chip" data-val="3">3 tags</button>
+          <button class="chip" data-val="5">5 tags</button>
+          <button class="chip" data-val="10">10 tags</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Output Refinement Toggles -->
+<div class="card">
+  <div class="section-toggle" onclick="toggleSection('refine')">
+    <label style="margin:0;cursor:pointer">⚙️ Output Refinement</label>
+    <span class="caret" id="refine-caret">▼</span>
+  </div>
+  <div class="collapsible-body" id="refine-body">
+    <div style="margin-top:8px">
+      <div class="tog-row">
+        <div><div class="tog-label">Always Include CTA</div><div class="tog-desc">Append a strong call-to-action</div></div>
+        <label class="toggle-sw"><input type="checkbox" id="togCta" checked><span class="sl"></span></label>
+      </div>
+      <div class="tog-row">
+        <div><div class="tog-label">SEO Mode</div><div class="tog-desc">Make copy keyword-conscious</div></div>
+        <label class="toggle-sw"><input type="checkbox" id="togSeo"><span class="sl"></span></label>
+      </div>
+      <div class="tog-row">
+        <div><div class="tog-label">Sentence Opener Variety</div><div class="tog-desc">No repeated sentence starters</div></div>
+        <label class="toggle-sw"><input type="checkbox" id="togOpener" checked><span class="sl"></span></label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Variants -->
+<div class="card">
+  <label>Variants to Generate</label>
+  <div class="chip-grid">
+    <button class="chip active" data-v="1">1 Variant</button>
+    <button class="chip" data-v="2">2 Variants</button>
+    <button class="chip" data-v="3">3 Variants</button>
+  </div>
+</div>
+
+<!-- Brief Card -->
+<div class="brief-card" id="briefCard"></div>
+
+<button class="gen-btn" id="genBtn" onclick="generate()">✦ Generate Copy</button>
+<button class="reset-btn" onclick="resetAll()">↺ Reset All Inputs</button>
+
+<!-- Output -->
+<div class="card output-card" id="outputCard" style="margin-top:14px">
+  <div class="output-head">
+    <label style="margin:0">Generated Copy</label>
+    <div class="out-actions">
+      <button class="icon-btn" onclick="rewrite('shorter')">↙ Shorter</button>
+      <button class="icon-btn" onclick="rewrite('longer')">↗ Longer</button>
+      <button class="icon-btn" onclick="injectPowerWords()">⚡ Power</button>
+      <button class="icon-btn" onclick="exportTxt()">⬇ TXT</button>
+      <button class="icon-btn" onclick="shareCopy()">↑ Share</button>
+      <button class="copy-btn" onclick="copyCopy()">⎘ Copy</button>
+    </div>
+  </div>
+  <div class="skeleton" id="skeleton">
+    <div class="skel-line"></div><div class="skel-line"></div>
+    <div class="skel-line short"></div><div class="skel-line"></div><div class="skel-line short"></div>
+  </div>
+  <div id="outputText"></div>
+  <div class="stats-bar" id="statsBar">
+    <div class="stat-item">Words: <strong id="statWords">0</strong></div>
+    <div class="stat-item">Chars: <strong id="statChars">0</strong></div>
+    <div class="stat-item">Read: <strong id="statRead">~0s</strong></div>
+  </div>
+  <div class="score-card" id="scoreCard">
+    <h4>✦ Copy Score</h4>
+    <div class="score-row"><span class="score-label">Clarity</span><div class="score-bar-wrap"><div class="score-bar-fill" id="barClarity" style="width:0%"></div></div><span class="score-num" id="numClarity">—</span></div>
+    <div class="score-row"><span class="score-label">Emotion</span><div class="score-bar-wrap"><div class="score-bar-fill" id="barEmotion" style="width:0%"></div></div><span class="score-num" id="numEmotion">—</span></div>
+    <div class="score-row"><span class="score-label">Persuasion</span><div class="score-bar-wrap"><div class="score-bar-fill" id="barPersuasion" style="width:0%"></div></div><span class="score-num" id="numPersuasion">—</span></div>
+    <div id="scoreNote" style="font-size:.78rem;color:var(--muted);margin-top:8px;line-height:1.5"></div>
+  </div>
+  <div id="abResult" style="display:none;margin-top:10px;padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border);font-size:.8rem;line-height:1.6"></div>
+</div>
+
+<!-- History Vault -->
+<div class="card" style="margin-top:14px">
+  <div class="section-toggle" onclick="toggleSection('hist')">
+    <label style="margin:0;cursor:pointer">🗂 Copy History Vault</label>
+    <span class="caret" id="hist-caret">▼</span>
+  </div>
+  <div class="collapsible-body" id="hist-body">
+    <div style="margin-top:12px" id="histList"></div>
+    <button class="icon-btn" style="margin-top:8px;width:100%;text-align:center" onclick="clearHistory()">🗑 Clear All History</button>
+  </div>
+</div>
+
+<!-- Competitor Rewriter -->
+<div class="card">
+  <div class="section-toggle" onclick="toggleSection('comp')">
+    <label style="margin:0;cursor:pointer">🎨 Competitor-Style Rewriter</label>
+    <span class="caret" id="comp-caret">▼</span>
+  </div>
+  <div class="collapsible-body" id="comp-body">
+    <div style="margin-top:12px">
+      <label style="margin-bottom:8px">Rewrite in the voice of:</label>
+      <div class="chip-grid" id="brandGrid"></div>
+      <button class="gen-btn" style="margin-top:10px;font-size:.9rem;padding:11px" onclick="rewriteAsBrand()">Rewrite as Brand Voice</button>
+    </div>
+  </div>
+</div>
+
+</main>
+<footer>© <span id="yr"></span> Manik Roy. All Rights Reserved.</footer>
+
+<script>
+document.getElementById('yr').textContent=new Date().getFullYear();
+
+// ── Theme ──
+function setTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  document.querySelectorAll('.themes button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('t-'+t).classList.add('active');
+}
+
+// ── Data ──
+const copyTypes=['Advertisement / Ad Copy','Headline / Tagline','Email Subject Line','Product Description','Social Media Post','Call to Action (CTA)','Personal / Brand Bio','Brand Slogan','Blog Intro Paragraph','Elevator Pitch','Sales Page Copy','Landing Page Hero','Push Notification','SMS / Text Message','Video Script (Short)','YouTube Ad Script','Podcast Ad Read','Press Release','Event Invitation Copy','Welcome Email','Abandoned Cart Email','Re-engagement Email','Testimonial / Review Request','Referral Program Copy','Loyalty Reward Message','App Store Description','Google Ad Headline','Native Ad Copy','Influencer Brief','Crowdfunding Campaign Pitch','Job Posting / Recruitment Ad','Newsletter Intro','Webinar Promo Copy','Discount / Offer Announcement','FAQ Answer Copy'];
+const audiences=['Startup Founders','Small Business Owners','Enterprise Decision Makers','Marketing Managers','Freelancers & Consultants','E-commerce Shoppers','Gen Z Consumers','Millennials','Parents & Families','Health & Wellness Enthusiasts','Tech Early Adopters','Remote Workers','Students & Graduates','Content Creators','Real Estate Buyers','Fitness Enthusiasts','Senior Citizens','Pet Owners','Gamers','Non-profit Supporters'];
+const platforms=['Instagram','Facebook','Twitter / X','LinkedIn','TikTok','YouTube','Pinterest','Snapchat','Email Newsletter','Google Ads','Website Landing Page','Blog','Podcast','WhatsApp / SMS','Reddit','Print / Flyer','Billboards / OOH','App Store','Amazon Product Page','Press Release'];
+const languages=['English','Spanish','French','Hindi','Arabic','Portuguese','German','Japanese','Korean','Italian','Dutch','Turkish','Russian','Bengali','Swahili'];
+const brands=['Apple','Nike','Notion','Duolingo','Tesla','Airbnb','Spotify','Innocent Drinks','Oatly','Dollar Shave Club'];
+const formalLabels=['Very Casual','Casual','Neutral','Formal','Very Formal'];
+
+// ── Dropdown State ──
+const ddState={ct:{selected:'Advertisement / Ad Copy'},aud:{selected:'Startup Founders'},plat:{selected:'Instagram'},lang:{selected:'English'}};
+
+function buildDD(id,items,stateKey){
+  const list=document.getElementById(id+'-list');
+  list.innerHTML='';
+  items.forEach(item=>{
+    const b=document.createElement('button');
+    b.textContent=item;
+    if(item===ddState[stateKey].selected)b.classList.add('selected');
+    b.onclick=e=>{
+      e.stopPropagation();
+      ddState[stateKey].selected=item;
+      document.getElementById(id+'-label').textContent=item;
+      list.querySelectorAll('button').forEach(x=>x.classList.remove('selected'));
+      b.classList.add('selected');
+      closeDD(id);
+      updateBrief();
+    };
+    list.appendChild(b);
+  });
+}
+function toggleDD(id){
+  const trigger=document.getElementById(id+'-trigger');
+  const list=document.getElementById(id+'-list');
+  const isOpen=list.classList.contains('open');
+  ['ct','aud','plat','lang'].forEach(x=>{
+    document.getElementById(x+'-trigger').classList.remove('open');
+    document.getElementById(x+'-list').classList.remove('open');
+  });
+  if(!isOpen){trigger.classList.add('open');list.classList.add('open');}
+}
+function closeDD(id){
+  document.getElementById(id+'-trigger').classList.remove('open');
+  document.getElementById(id+'-list').classList.remove('open');
+}
+document.addEventListener('click',e=>{
+  ['ct','aud','plat','lang'].forEach(id=>{
+    const w=document.getElementById(id+'-wrap');
+    if(w&&!w.contains(e.target))closeDD(id);
+  });
+});
+buildDD('ct',copyTypes,'ct');
+buildDD('aud',audiences,'aud');
+buildDD('plat',platforms,'plat');
+buildDD('lang',languages,'lang');
+
+// ── Chip Groups (single-select) ──
+function initChipGroup(gridId,cb){
+  document.getElementById(gridId).querySelectorAll('.chip').forEach(b=>{
+    b.onclick=()=>{
+      document.getElementById(gridId).querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      if(cb)cb();
+      updateBrief();
+    };
+  });
+}
+initChipGroup('toneGrid');
+initChipGroup('lengthGrid');
+initChipGroup('readLevelGrid');
+initChipGroup('povGrid');
+initChipGroup('sentGrid');
+initChipGroup('hookGrid');
+initChipGroup('framingGrid');
+initChipGroup('urgGrid');
+initChipGroup('emojiGrid');
+initChipGroup('hashGrid');
+
+// Variants chip group
+document.querySelectorAll('[data-v]').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('[data-v]').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    updateBrief();
+  };
+});
+
+// ── Brand Grid ──
+let selectedBrand=brands[0];
+brands.forEach(b=>{
+  const btn=document.createElement('button');
+  btn.className='chip'+(b===selectedBrand?' active':'');
+  btn.textContent=b;
+  btn.onclick=()=>{
+    document.getElementById('brandGrid').querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));
+    btn.classList.add('active');
+    selectedBrand=b;
+  };
+  document.getElementById('brandGrid').appendChild(btn);
+});
+
+// ── Char count ──
+document.getElementById('product').addEventListener('input',function(){
+  if(this.value.length>300)this.value=this.value.slice(0,300);
+  document.getElementById('charCount').textContent=this.value.length;
+  updateBrief();
+});
+
+// ── Toggle listeners ──
+['togTrust','togCta','togSeo','togOpener'].forEach(id=>{
+  document.getElementById(id).addEventListener('change',updateBrief);
+});
+document.getElementById('formalSlider').addEventListener('input',updateBrief);
+document.getElementById('brandKw').addEventListener('input',updateBrief);
+document.getElementById('forbidKw').addEventListener('input',updateBrief);
+
+// ── Brief Card ──
+function getChipVal(gridId){return document.querySelector(`#${gridId} .chip.active`)?.dataset.val||'';}
+function updateBrief(){
+  const tone=document.querySelector('#toneGrid .chip.active')?.dataset.tone||'Professional';
+  const vars=document.querySelector('[data-v].active')?.dataset.v||'1';
+  const formal=formalLabels[document.getElementById('formalSlider').value-1];
+  const length=getChipVal('lengthGrid');
+  const pov=getChipVal('povGrid');
+  const hook=getChipVal('hookGrid');
+  const framing=getChipVal('framingGrid');
+  const emoji=getChipVal('emojiGrid');
+  const lang=ddState.lang.selected;
+  const kw=document.getElementById('brandKw').value.trim();
+  const forb=document.getElementById('forbidKw').value.trim();
+  const cta=document.getElementById('togCta').checked;
+  const seo=document.getElementById('togSeo').checked;
+  document.getElementById('formalLabel').textContent=formal;
+  const card=document.getElementById('briefCard');
+  card.classList.add('show');
+  card.innerHTML=`<strong>📋 Brief Summary</strong><br>
+<strong>${ddState.ct.selected}</strong> · ${ddState.aud.selected} · ${ddState.plat.selected}<br>
+Tone: <strong>${tone}</strong> · Formality: <strong>${formal}</strong> · Lang: <strong>${lang}</strong><br>
+Length: <strong>${length}</strong> · POV: <strong>${pov}</strong> · Hook: <strong>${hook}</strong><br>
+Framing: <strong>${framing}</strong> · Emoji: <strong>${emoji}</strong> · Variants: <strong>${vars}</strong>
+${kw?`<br>Keywords: <strong>${kw}</strong>`:''}${forb?`<br>Forbidden: <strong>${forb}</strong>`:''}
+${cta?'<br>✓ CTA':''}${seo?' · ✓ SEO':''}`;
+}
+updateBrief();
+
+// ── Collapsible Sections ──
+function toggleSection(id){
+  const body=document.getElementById(id+'-body');
+  const toggle=body.previousElementSibling;
+  const isOpen=body.classList.toggle('open');
+  toggle.classList.toggle('collapsed',!isOpen);
+}
+
+// ── AI Call ──
+async function callAI(prompt,maxTokens=900){
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxTokens,messages:[{role:'user',content:prompt}]})
+  });
+  const data=await res.json();
+  return data?.content?.map(c=>c.text||'').join('')||'';
+}
+
+// ── Generate ──
+async function generate(){
+  const typeLabel=ddState.ct.selected;
+  const product=document.getElementById('product').value.trim();
+  if(!product){alert('Please describe what you are promoting.');return;}
+
+  const audience=ddState.aud.selected;
+  const platform=ddState.plat.selected;
+  const tone=document.querySelector('#toneGrid .chip.active')?.dataset.tone||'Professional';
+  const variants=parseInt(document.querySelector('[data-v].active')?.dataset.v||'1');
+  const formal=formalLabels[document.getElementById('formalSlider').value-1];
+  const lang=ddState.lang.selected;
+  const length=getChipVal('lengthGrid');
+  const readLevel=getChipVal('readLevelGrid');
+  const pov=getChipVal('povGrid');
+  const sentStyle=getChipVal('sentGrid');
+  const hook=getChipVal('hookGrid');
+  const framing=getChipVal('framingGrid');
+  const urg=getChipVal('urgGrid');
+  const emoji=getChipVal('emojiGrid');
+  const hashCount=getChipVal('hashGrid');
+  const trust=document.getElementById('togTrust').checked;
+  const cta=document.getElementById('togCta').checked;
+  const seo=document.getElementById('togSeo').checked;
+  const opener=document.getElementById('togOpener').checked;
+  const kw=document.getElementById('brandKw').value.trim();
+  const forb=document.getElementById('forbidKw').value.trim();
+
+  const btn=document.getElementById('genBtn');
+  btn.disabled=true;btn.textContent='Generating…';
+
+  const outputCard=document.getElementById('outputCard');
+  const skel=document.getElementById('skeleton');
+  const out=document.getElementById('outputText');
+  outputCard.classList.add('show');
+  skel.classList.add('show');
+  out.textContent='';
+  document.getElementById('statsBar').classList.remove('show');
+  document.getElementById('scoreCard').classList.remove('show');
+  document.getElementById('abResult').style.display='none';
+
+  const variantInstr=variants>1?`Generate ${variants} distinct variants, numbered Variant 1:, Variant 2:, etc. Separate with a blank line.`:'Generate 1 polished version.';
+  const hashInstr=hashCount!=='none'?`After the copy, add ${hashCount} relevant hashtags on a new line.`:'';
+
+  const prompt=`You are an elite copywriter. Write ${typeLabel} copy with EXACTLY these parameters:
+
+Product/Service: ${product}
+Target Audience: ${audience}
+Platform: ${platform}
+Tone: ${tone}
+Formality: ${formal}
+Copy Length: ${length}
+Reading Level: ${readLevel}
+Point of View: ${pov}
+Sentence Style: ${sentStyle}
+Emotional Hook: ${hook}
+Offer Framing: ${framing}
+Urgency Type: ${urg}
+Emoji Style: Use ${emoji}
+Language: ${lang}
+${kw?`Must include these words/phrases: ${kw}`:''}
+${forb?`Never use these words: ${forb}`:''}
+${trust?'Include subtle trust signals (e.g. social proof cues, authority markers, stats if relevant).':''}
+${cta?'End with a strong, clear call-to-action.':''}
+${seo?'Make the copy keyword-conscious and SEO-friendly.':''}
+${opener?'Vary sentence openers — no two sentences should start with the same word.':''}
+${variantInstr}
+${hashInstr}
+
+RULES: Output copy only. No labels, no explanations, no preamble. Match every parameter precisely.`;
+
+  try{
+    // Single API call: copy + score + A/B in one request
+    const needsAB = variants>=2;
+    const combinedPrompt = prompt + `
+
+---
+After the copy above, append a JSON block on a new line in this exact format (no markdown fences):
+SCORE:{"clarity":N,"emotion":N,"persuasion":N,"note":"one insight sentence"}
+${needsAB ? 'ABWINNER:Variant X likely wins because [2-sentence reason]' : ''}`;
+
+    const raw = await callAI(combinedPrompt, 1200);
+
+    // Split copy from metadata
+    const scoreMatch = raw.match(/SCORE:(\{.*?\})/s);
+    const abMatch    = raw.match(/ABWINNER:(.*?)(?=SCORE:|$)/s);
+    const copyText   = raw.replace(/SCORE:.*$/s,'').replace(/ABWINNER:.*$/s,'').trim();
+
+    skel.classList.remove('show');
+    out.textContent = copyText;
+    updateStats(copyText);
+    saveHistory(typeLabel, copyText);
+    renderHistory();
+
+    // Render score inline
+    if(scoreMatch){
+      try{
+        const json=JSON.parse(scoreMatch[1]);
+        document.getElementById('scoreCard').classList.add('show');
+        ['clarity','emotion','persuasion'].forEach(k=>{
+          const v=Math.min(10,Math.max(1,json[k]||5));
+          document.getElementById('bar'+k[0].toUpperCase()+k.slice(1)).style.width=(v*10)+'%';
+          document.getElementById('num'+k[0].toUpperCase()+k.slice(1)).textContent=v;
+        });
+        document.getElementById('scoreNote').textContent=json.note||'';
+      }catch(e){}
+    }
+
+    // Render A/B result inline
+    if(needsAB && abMatch && abMatch[1].trim()){
+      const ab=document.getElementById('abResult');
+      ab.style.display='block';
+      ab.innerHTML=`<strong style="color:var(--accent)">🏆 A/B Predictor:</strong> ${abMatch[1].trim()}`;
+    }
+
+  }catch(e){
+    skel.classList.remove('show');
+    out.textContent='Error: Could not connect. Please try again.';
+  }
+  btn.disabled=false;btn.textContent='✦ Generate Copy';
+}
+
+// ── Stats ──
+function updateStats(text){
+  const words=text.trim().split(/\s+/).filter(Boolean).length;
+  const secs=Math.ceil(words/3);
+  document.getElementById('statWords').textContent=words;
+  document.getElementById('statChars').textContent=text.length;
+  document.getElementById('statRead').textContent=secs<60?`~${secs}s`:`~${Math.ceil(secs/60)}m`;
+  document.getElementById('statsBar').classList.add('show');
+}
+
+// ── Power Words ──
+async function injectPowerWords(){
+  const text=document.getElementById('outputText').textContent.trim();
+  if(!text)return;
+  const btn=document.querySelector('.icon-btn[onclick*="Power"]');
+  btn.textContent='⚡…';btn.disabled=true;
+  try{
+    const result=await callAI(`Rewrite injecting powerful psychological trigger words (scarcity, curiosity, authority, exclusivity). Keep same structure. Output copy only.\n\n${text}`);
+    document.getElementById('outputText').textContent=result;
+    updateStats(result);
+  }catch(e){}
+  btn.textContent='⚡ Power';btn.disabled=false;
+}
+
+// ── Rewrite Shorter/Longer ──
+async function rewrite(dir){
+  const text=document.getElementById('outputText').textContent.trim();
+  if(!text)return;
+  const btn=document.querySelector(`.icon-btn[onclick*="${dir}"]`);
+  btn.textContent='…';btn.disabled=true;
+  const instr=dir==='shorter'?'Rewrite significantly more concise, keeping core message and punch.':'Expand to be more detailed and persuasive, maintaining tone and style.';
+  try{
+    const result=await callAI(`${instr} Output copy only.\n\n${text}`);
+    document.getElementById('outputText').textContent=result;
+    updateStats(result);
+  }catch(e){}
+  btn.textContent=dir==='shorter'?'↙ Shorter':'↗ Longer';btn.disabled=false;
+}
+
+// ── Competitor Rewrite ──
+async function rewriteAsBrand(){
+  const text=document.getElementById('outputText').textContent.trim();
+  if(!text){alert('Generate copy first.');return;}
+  const btn=document.querySelector('#comp-body .gen-btn');
+  btn.disabled=true;btn.textContent='Rewriting…';
+  try{
+    const result=await callAI(`Rewrite this copy in the signature brand voice of ${selectedBrand}. Capture their tone, vocabulary, and style perfectly. Output copy only.\n\n${text}`);
+    document.getElementById('outputText').textContent=result;
+    updateStats(result);
+    document.getElementById('outputCard').classList.add('show');
+  }catch(e){}
+  btn.disabled=false;btn.textContent='Rewrite as Brand Voice';
+}
+
+// ── History ──
+function saveHistory(type,text){
+  let h=JSON.parse(localStorage.getItem('cc_hist')||'[]');
+  h.unshift({type,text:text.slice(0,400),ts:Date.now()});
+  localStorage.setItem('cc_hist',JSON.stringify(h.slice(0,10)));
+}
+function renderHistory(){
+  const list=document.getElementById('histList');
+  const h=JSON.parse(localStorage.getItem('cc_hist')||'[]');
+  if(!h.length){list.innerHTML='<div class="hist-empty">No history yet.</div>';return;}
+  list.innerHTML=h.map((item,i)=>`<div class="hist-item">
+    <div class="hist-meta">${item.type} · ${new Date(item.ts).toLocaleString()}
+      <button class="hist-del" onclick="deleteHistory(event,${i})">✕</button>
+    </div>
+    <div class="hist-preview" onclick="loadHistory(${i})">${item.text.replace(/</g,'&lt;')}</div>
+  </div>`).join('');
+}
+function deleteHistory(e,i){
+  e.stopPropagation();
+  let h=JSON.parse(localStorage.getItem('cc_hist')||'[]');
+  h.splice(i,1);
+  localStorage.setItem('cc_hist',JSON.stringify(h));
+  renderHistory();
+}
+function loadHistory(i){
+  const h=JSON.parse(localStorage.getItem('cc_hist')||'[]');
+  if(!h[i])return;
+  document.getElementById('outputText').textContent=h[i].text;
+  document.getElementById('outputCard').classList.add('show');
+  updateStats(h[i].text);
+  window.scrollTo({top:document.getElementById('outputCard').offsetTop-20,behavior:'smooth'});
+}
+function clearHistory(){localStorage.removeItem('cc_hist');renderHistory();}
+renderHistory();
+
+// ── Export / Share / Copy ──
+function exportTxt(){
+  const text=document.getElementById('outputText').textContent;
+  if(!text)return;
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([text],{type:'text/plain'}));
+  a.download='copycraft-output.txt';a.click();
+}
+async function shareCopy(){
+  const text=document.getElementById('outputText').textContent;
+  if(!text)return;
+  if(navigator.share)await navigator.share({title:'CopyCraft Output',text});
+  else copyCopy();
+}
+function copyCopy(){
+  const t=document.getElementById('outputText').textContent;
+  if(!t)return;
+  navigator.clipboard.writeText(t).then(()=>{
+    const b=document.querySelector('.copy-btn');
+    b.textContent='✓ Copied!';
+    setTimeout(()=>b.textContent='⎘ Copy',2000);
+  });
+}
+
+// ── Reset ──
+function resetAll(){
+  if(!confirm('Reset all inputs to defaults?'))return;
+  document.getElementById('product').value='';
+  document.getElementById('charCount').textContent='0';
+  document.getElementById('brandKw').value='';
+  document.getElementById('forbidKw').value='';
+  document.getElementById('formalSlider').value=3;
+  ['ct','aud','plat','lang'].forEach(id=>{
+    const def={ct:'Advertisement / Ad Copy',aud:'Startup Founders',plat:'Instagram',lang:'English'};
+    ddState[id].selected=def[id];
+    document.getElementById(id+'-label').textContent=def[id];
+    document.querySelectorAll(`#${id}-list button`).forEach(b=>b.classList.toggle('selected',b.textContent===def[id]));
+  });
+  ['toneGrid','lengthGrid','readLevelGrid','povGrid','sentGrid','hookGrid','framingGrid','urgGrid','emojiGrid','hashGrid'].forEach(gridId=>{
+    const chips=document.getElementById(gridId).querySelectorAll('.chip');
+    chips.forEach((c,i)=>c.classList.toggle('active',i===0));
+  });
+  document.querySelectorAll('[data-v]').forEach((b,i)=>b.classList.toggle('active',i===0));
+  document.getElementById('togTrust').checked=false;
+  document.getElementById('togCta').checked=true;
+  document.getElementById('togSeo').checked=false;
+  document.getElementById('togOpener').checked=true;
+  document.getElementById('outputCard').classList.remove('show');
+  document.getElementById('outputText').textContent='';
+  document.getElementById('statsBar').classList.remove('show');
+  document.getElementById('scoreCard').classList.remove('show');
+  document.getElementById('abResult').style.display='none';
+  updateBrief();
+}
+
+// ── PWA Service Worker ──
+(function(){
+  try {
+    const h = location.hostname || '';
+    const blocked = ['claudeusercontent','claude.ai','localhost','127.0.0.1',''];
+    if('serviceWorker' in navigator && !blocked.some(b => h.includes(b))){
+      window.addEventListener('load', ()=>{
+        navigator.serviceWorker.register('./sw.js')
+          .then(r=>console.log('SW registered:', r.scope))
+          .catch(()=>{});
+      });
+    }
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>
